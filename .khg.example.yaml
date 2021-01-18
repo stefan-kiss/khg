@@ -1,0 +1,10 @@
+sources:
+  openstack:
+    source: ssh://centos@10.0.0.1/./.kube/config
+    insecure: true
+    apiaddress: 10.100.0.1:6443
+  vagrant:
+    source: ssh://vagrant@192.168.0.1:2222/./.kube/config
+  local:
+    source: ~/projects/kuberetes/example.com/config
+destination: ~/.kube/config
