@@ -37,7 +37,7 @@ var kubeValidSrc = KubeConfig{
 	Label: "externalTest",
 	SrcDef: cfg.Source{
 		Insecure:   true,
-		ApiAddress: "1.1.1.1:443",
+		ApiAddress: "https://1.1.1.1:443",
 	},
 }
 

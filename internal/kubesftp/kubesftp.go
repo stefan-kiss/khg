@@ -22,10 +22,11 @@ import (
 	"github.com/kevinburke/ssh_config"
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/sftp"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -57,14 +58,22 @@ func publicKey(path string) (ssh.AuthMethod, error) {
 	return ssh.PublicKeys(signer), nil
 }
 
-func loadSshConfig(url *url.URL) (connect string, sshConfig *ssh.ClientConfig, err error) {
+func LoadSshConfig(url *url.URL) (host string, port string, sshConfig *ssh.ClientConfig, err error) {
 	var username string
+	var urlHostName string
 
 	hostPort := strings.Split(url.Host, ":")
-
 	if len(hostPort) < 2 {
-		port := ssh_config.Get(url.Host, "Port")
-		connect = fmt.Sprintf("%s:%s", url.Host, port)
+		port = ssh_config.Get(url.Host, "Port")
+	} else {
+		port = hostPort[1]
+	}
+	urlHostName = hostPort[0]
+
+	if host = ssh_config.Get(urlHostName, "HostName"); host != "" {
+		log.Debugf("ssh config HostName: %q", host)
+	} else {
+		host = hostPort[0]
 	}
 
 	if url.User.Username() != "" {
@@ -82,7 +91,7 @@ func loadSshConfig(url *url.URL) (connect string, sshConfig *ssh.ClientConfig, e
 
 	key, err := publicKey(keyPath)
 	if err != nil {
-		return "", nil, fmt.Errorf("unable to load private key: %v", err)
+		return "", "", nil, fmt.Errorf("unable to load private key: %v", err)
 	}
 	sshConfig = &ssh.ClientConfig{
 		User: username,
@@ -92,22 +101,37 @@ func loadSshConfig(url *url.URL) (connect string, sshConfig *ssh.ClientConfig, e
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Timeout:         5 * time.Second,
 	}
-
-	return connect, sshConfig, nil
+	log.Debugf("host: %s:%s, config: %#v", host, port, sshConfig)
+	return host, port, sshConfig, nil
 }
 
-func GetFile(url *url.URL) (contents []byte, err error) {
+func GetFile(url *url.URL) (contents []byte, host string, port string, err error) {
 
 	var fileName string
+	log.Debugf("url: %#v", url)
+
+	if url.Host != "" && url.Path == "" {
+		url.Path = viper.GetString("defaultsourcepath")
+		log.Debugf("empty path, using default: %q", url.Path)
+	}
+
+	if url.Path == "" {
+		log.Fatalf("unable to determine source path: empty string")
+	}
 
 	if strings.HasPrefix(url.Path, "/./") || strings.HasPrefix(url.Path, "/~/") {
 		fileName = url.Path[3:]
+	} else if strings.HasPrefix(url.Path, "./") || strings.HasPrefix(url.Path, "~/") {
+		fileName = url.Path[2:]
+	} else {
+		fileName = url.Path
 	}
 
-	connect, config, err := loadSshConfig(url)
+	host, port, config, err := LoadSshConfig(url)
 
-	// connect
-	conn, err := ssh.Dial("tcp", connect, config)
+	// host
+	log.Debugf("connecting to: %q", host)
+	conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", host, port), config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -124,17 +148,18 @@ func GetFile(url *url.URL) (contents []byte, err error) {
 	bytesWriter := bufio.NewWriter(&bytesContent)
 
 	// open source file
+	log.Debugf("opening file: %q", fileName)
 	srcFile, err := client.Open(fileName)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// copy source file to destination file
-	bytes, err := io.Copy(bytesWriter, srcFile)
+	bRead, err := io.Copy(bytesWriter, srcFile)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%d bytes copied\n", bytes)
-
-	return bytesContent.Bytes(), nil
+	bytesWriter.Flush()
+	log.Infof("%d bytes copied\n", bRead)
+	return bytesContent.Bytes(), host, port, nil
 }

@@ -82,6 +82,7 @@ github.com/pkg/errors
 github.com/pkg/sftp
 # github.com/sirupsen/logrus v1.7.0
 ## explicit
+github.com/sirupsen/logrus
 # github.com/spf13/afero v1.5.1
 ## explicit
 github.com/spf13/afero

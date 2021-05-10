@@ -51,7 +51,7 @@ func gather(cmd *cobra.Command, args []string) {
 	khg := cfg.Cfg{}
 	viper.Unmarshal(&khg)
 
-	dest, err := kubeconfig.Init(khg.Destination)
+	dest, err := kubeconfig.DestInit(khg.Destination)
 	if err != nil {
 		log.Fatalf("unable to parse destination url: %v: %v", khg.Destination, err)
 	}
@@ -63,7 +63,7 @@ func gather(cmd *cobra.Command, args []string) {
 
 	konfigs := make([]*kubeconfig.KubeConfig, 0)
 	for label, src := range khg.Sources {
-		k, err := kubeconfig.Init(src.Source)
+		k, err := kubeconfig.DestInit(src.Source)
 		if err != nil {
 			log.Fatalf("unable to parse destination: %v: %v", khg.Destination, err)
 		}
@@ -73,10 +73,6 @@ func gather(cmd *cobra.Command, args []string) {
 	}
 
 	for _, konfig := range konfigs {
-		err := konfig.ReadConfig()
-		if err != nil {
-			log.Fatalf("unable to parse destination: %v: %v", konfig.Url, err)
-		}
 		err = dest.CopyCurrentContext(konfig)
 		if err != nil {
 			log.Fatalf("unable merge config: %v: %v", konfig.Url, err)

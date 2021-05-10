@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/goccy/go-yaml"
 	"github.com/mitchellh/go-homedir"
+	log "github.com/sirupsen/logrus"
 	"github.com/stefan-kiss/khg/internal/cfg"
 	"github.com/stefan-kiss/khg/internal/kubesftp"
 	"io/ioutil"
@@ -26,12 +27,17 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	clientcmdlatest "k8s.io/client-go/tools/clientcmd/api/latest"
-	"log"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+)
+
+var (
+	SshProtocol  = "ssh://"
+	FileProtocol = "file://"
+	LocalHost    = "127.0.0.1"
 )
 
 type KubeConfig struct {
@@ -45,13 +51,17 @@ type KubeConfig struct {
 func (k *KubeConfig) ReadConfig() (err error) {
 
 	var bContent []byte
-	if k.Url.Scheme == "ssh" || k.Url.Host != "" {
-		bContent, err = kubesftp.GetFile(k.Url)
+	var host string
+	if k.Url.Scheme == "ssh" {
+		log.Debugf("protocol: SSH, HOST: %q", k.Url.Host)
+		bContent, host, _, err = kubesftp.GetFile(k.Url)
+		k.SrcDef.OverrideIp = host
 		if err != nil {
 			return err
 		}
 	} else {
 		var fileName string
+		k.SrcDef.OverrideIp = LocalHost
 		if strings.HasPrefix(k.Url.Path, "~/") {
 			home, err := homedir.Dir()
 			if err != nil {
@@ -61,7 +71,7 @@ func (k *KubeConfig) ReadConfig() (err error) {
 		} else {
 			fileName = k.Url.Path
 		}
-
+		log.Debugf("protocol: FILE, PATH: %q", fileName)
 		bContent, err = ioutil.ReadFile(fileName)
 		if err != nil {
 			return err
@@ -79,12 +89,37 @@ func (k *KubeConfig) ReadConfig() (err error) {
 	return nil
 }
 
-func Init(source string) (konf *KubeConfig, err error) {
+func DestInit(source string) (konf *KubeConfig, err error) {
 	konf = new(KubeConfig)
 	konf.Url, err = url.Parse(source)
 	if err != nil {
 		return nil, err
 	}
+
+	err = konf.ReadConfig()
+	if err != nil {
+		return nil, fmt.Errorf("unable to read current destination config file: %v: %v", source, err)
+	}
+	return konf, nil
+}
+
+func SourceInit(source cfg.Source, label string) (konf *KubeConfig, err error) {
+	konf = new(KubeConfig)
+	if !strings.HasPrefix(source.Source, FileProtocol) && !strings.HasPrefix(source.Source, SshProtocol) {
+		source.Source = SshProtocol + source.Source
+	}
+	konf.Url, err = url.Parse(source.Source)
+	if err != nil {
+		return nil, err
+	}
+	konf.SrcDef = source
+	konf.Label = label
+
+	err = konf.ReadConfig()
+	if err != nil {
+		return nil, fmt.Errorf("unable to read current destination config file: %v: %v", source, err)
+	}
+
 	return konf, nil
 }
 
@@ -168,8 +203,24 @@ func (k *KubeConfig) CopyCurrentContext(from *KubeConfig) error {
 	k.Config.Contexts[translatedContext].Cluster = translatedCluster
 	k.Config.Contexts[translatedContext].AuthInfo = translatedAuth
 
-	if from.SrcDef.ApiAddress != "" {
-		k.Config.Clusters[translatedCluster].Server = fmt.Sprintf("https://%s", from.SrcDef.ApiAddress)
+	if !from.SrcDef.AutodetectApi && from.SrcDef.ApiAddress != "" {
+		k.Config.Clusters[translatedCluster].Server = from.SrcDef.ApiAddress
+	}
+
+	// if we need to autodetect we will use the same ip used to connect by ssh
+	// or 127.0.0.1 for localhost
+	// and the same port as the one from the api string. We cant autodetect a different port.
+	if from.SrcDef.AutodetectApi {
+		apiUrl, err := url.Parse(k.Config.Clusters[translatedCluster].Server)
+		if err != nil {
+			return fmt.Errorf("unable to parse existing API url. autodetecting api failed: %v", err)
+		}
+		hostStrings := strings.Split(apiUrl.Host, ":")
+		if len(hostStrings) < 2 {
+			return fmt.Errorf("unable to parse existing API url. unable to find current port")
+		}
+		from.SrcDef.ApiAddress = fmt.Sprintf("https://%s:%s", from.SrcDef.OverrideIp, hostStrings[1])
+		k.Config.Clusters[translatedCluster].Server = k.SrcDef.ApiAddress
 	}
 
 	if from.SrcDef.Insecure {
@@ -182,7 +233,7 @@ func (k *KubeConfig) CopyCurrentContext(from *KubeConfig) error {
 }
 
 func TruncateDestination(path string) error {
-	dest, err := Init(path)
+	dest, err := DestInit(path)
 	if err != nil {
 		return fmt.Errorf("unable to parse destination url: %v: %v", path, err)
 	}
@@ -194,23 +245,59 @@ func TruncateDestination(path string) error {
 	return nil
 }
 
-func InitDestination(path string) (*KubeConfig, error) {
-	dest, err := Init(path)
+func (k *KubeConfig) MergeOne(sourceKonfig *KubeConfig) error {
+
+	err := k.CopyCurrentContext(sourceKonfig)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse destination url: %v: %v", path, err)
+		return fmt.Errorf("unable merge config: %v: %v", sourceKonfig.Url, err)
 	}
 
-	err = dest.ReadConfig()
+	err = k.WriteConfig()
 	if err != nil {
-		return nil, fmt.Errorf("unable to read current destination config file: %v: %v", path, err)
+		return fmt.Errorf("unable write config: %v: %v", k.Url, err)
 	}
-
-	return dest, nil
+	return nil
 }
 
-func (k *KubeConfig) MergeOne(label string, source cfg.Source) error {
+func (k *KubeConfig) Delete(label string) error {
 
-	sourceKonfig, err := Init(source.Source)
+	err := k.ReadConfig()
+	if err != nil {
+		log.Fatalf("unable to parse destination: %v: %v", k.Url, err)
+	}
+
+	var removeCluster string
+	var removeUser string
+	if cluster, ok := k.Config.Contexts[label]; ok {
+		removeCluster = cluster.Cluster
+		removeUser = cluster.AuthInfo
+		delete(k.Config.Contexts, label)
+	} else {
+		return fmt.Errorf("cluster named: %s not found", label)
+	}
+
+	if _, ok := k.Config.AuthInfos[removeUser]; ok {
+		delete(k.Config.AuthInfos, removeUser)
+	} else {
+		log.Warnf("user %s not found. continuing", label)
+	}
+
+	if _, ok := k.Config.Clusters[removeCluster]; ok {
+		delete(k.Config.Clusters, removeCluster)
+	} else {
+		log.Warnf("cluster %s not found. continuing", label)
+	}
+
+	err = k.WriteConfig()
+	if err != nil {
+		return fmt.Errorf("unable write config: %v: %v", k.Url, err)
+	}
+	return nil
+}
+
+func (k *KubeConfig) List(label string, source cfg.Source) error {
+
+	sourceKonfig, err := DestInit(source.Source)
 	if err != nil {
 		return fmt.Errorf("unable to parse source: %v: %v", source.Source, err)
 	}

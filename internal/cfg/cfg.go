@@ -15,13 +15,50 @@
 
 package cfg
 
+import (
+	"fmt"
+	"github.com/goccy/go-yaml"
+	"github.com/spf13/viper"
+	"io/ioutil"
+)
+
 type Source struct {
-	Source     string `yaml:"source"`
-	Insecure   bool   `yaml:"insecure"`
-	ApiAddress string `yaml:"apiaddress"`
+	Source        string `yaml:"source"`
+	Insecure      bool   `yaml:"insecure"`
+	ApiAddress    string `yaml:"apiaddress"`
+	AutodetectApi bool   `yaml:"-"`
+	OverrideIp    string `yaml:"-"`
 }
 
 type Cfg struct {
-	Sources     map[string]Source `yaml:"sources"`
-	Destination string            `yaml:"destination"`
+	Sources           map[string]Source `yaml:"sources"`
+	Destination       string            `yaml:"destination"`
+	DefaultSourcePath string
+}
+
+func Add(config *Cfg, label string, source Source) error {
+	config.Sources[label] = source
+	return Save(config)
+}
+
+func Delete(config *Cfg, label string) error {
+	if _, ok := config.Sources[label]; ok {
+		delete(config.Sources, label)
+	} else {
+		return fmt.Errorf("label: %s not found in config", label)
+	}
+	return nil
+}
+
+func Save(config *Cfg) error {
+	configBytes, err := yaml.Marshal(*config)
+	if err != nil {
+		return fmt.Errorf("unable marshal the config file: %v", err)
+	}
+
+	err = ioutil.WriteFile(viper.ConfigFileUsed(), configBytes, 600)
+	if err != nil {
+		return fmt.Errorf("unable write the config file %s: %v", viper.ConfigFileUsed(), err)
+	}
+	return nil
 }
