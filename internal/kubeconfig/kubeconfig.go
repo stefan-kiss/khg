@@ -114,7 +114,7 @@ func SourceInit(source cfg.Source, label string) (konf *KubeConfig, err error) {
 	}
 	konf.SrcDef = source
 	konf.Label = label
-
+	log.Infof("using source: %s", source.Source)
 	err = konf.ReadConfig()
 	if err != nil {
 		return nil, fmt.Errorf("unable to read current destination config file: %v: %v", source, err)
@@ -220,7 +220,7 @@ func (k *KubeConfig) CopyCurrentContext(from *KubeConfig) error {
 			return fmt.Errorf("unable to parse existing API url. unable to find current port")
 		}
 		from.SrcDef.ApiAddress = fmt.Sprintf("https://%s:%s", from.SrcDef.OverrideIp, hostStrings[1])
-		k.Config.Clusters[translatedCluster].Server = k.SrcDef.ApiAddress
+		k.Config.Clusters[translatedCluster].Server = from.SrcDef.ApiAddress
 	}
 
 	if from.SrcDef.Insecure {
@@ -228,7 +228,6 @@ func (k *KubeConfig) CopyCurrentContext(from *KubeConfig) error {
 		k.Config.Clusters[translatedCluster].CertificateAuthorityData = nil
 		k.Config.Clusters[translatedCluster].InsecureSkipTLSVerify = true
 	}
-
 	return nil
 }
 

@@ -15,7 +15,6 @@
 package cmd
 
 import (
-	"github.com/k0kubun/pp"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/stefan-kiss/khg/internal/cfg"
@@ -126,7 +125,6 @@ func add(cmd *cobra.Command, args []string) {
 		log.Fatalf("unable get persistent flag: %v", err)
 	}
 
-	pp.Println(sourceKonfig.SrcDef)
 	if persistent {
 		err := cfg.Add(&configUsed, sourceKonfig.Label, sourceKonfig.SrcDef)
 		if err != nil {
