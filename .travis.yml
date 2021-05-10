@@ -1,3 +1,12 @@
 language: go
 go:
-  - 1.15.x
+- 1.15.x
+env:
+  global:
+    secure: Wo3cCEJiXvrY8Hasvo6m1v8qKjNaTXJ+qkxzsdXNUVzDk6UAUdP88BSU/tq2w8M11X+eQrQv15SIsZrBAAVCucjxsA2a4g+/JsXnwAZabgIoA01DO66dIricP80MIloe65/oZ9tZ0l4l2HTrFauhGkyKzjf0/VTpqPdN707WpRYIPh8U/yfBD0dchhyExhZgSlNMNWLGaSk8mNfVMa/TrrYrciAtyPj86YuHeFshcDgx/e2Wu7dDqPh6LcLWGAPcxxEHssrXQT7/JnvlQ92R61lHbhzhz2LqRDRDnSKAtxEQ5y61zdzab5dCl2ldzuefUaPWWNcL39/YLZSrc5TDktxr3OKNc56vLLGxKKv3uIIoSWuxU4Y5YJ98Iyq/sIqQyvjb5s8Pw3kU8utePyAMhzNO66zyov78s2NVz/vjevD1mZZmQPt/acLR9bPMGz3DDwAqh2XARBHnltxnyvp9HS/XINS2+Lm0RbZGOIvAXbWcoVwCj5Ki6JJfZtDxFwWtOoZW9SDQjcEnp4gWn6/19zJDBrBorfI96/V5turFtVf8+GbG8gePsAj1KVl1ruB4hVBw7zB2yiCKOeqlUemeUD0sUIL/UtljhsIyPFK0yOvr0E56RElOG51nUDOk5S7uVy+oih1yanpIxd2jTFemupYxl2BIUSpRbv2trEJCsCU=
+deploy:
+  provider: releases
+  file: "bin/*"
+  skip_cleanup: true
+  on:
+    tags: true
