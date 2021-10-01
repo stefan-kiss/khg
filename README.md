@@ -1,4 +1,4 @@
-[![Build Status](https://app.travis-ci.com/stefan-kiss/khg.svg?branch=master)](https://app.travis-ci.com/stefan-kiss/khg.svg?branch=master)
+[![Build Status](https://app.travis-ci.com/stefan-kiss/khg.svg?branch=master)](https://app.travis-ci.com/github/stefan-kiss/khg)
 
 # khg
 Kubernetes (config file) hunter gatherer
