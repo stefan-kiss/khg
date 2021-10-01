@@ -33,10 +33,8 @@ import (
 	"time"
 )
 
-const DEFAULT_SSH_PORT = 22
-
 var (
-	DEFAULT_KEY_PATH = "~/.ssh/id_rsa"
+	DefaultKeyPath = "~/.ssh/id_rsa"
 )
 
 func publicKey(path string) (ssh.AuthMethod, error) {
@@ -82,11 +80,17 @@ func LoadSshConfig(url *url.URL) (host string, port string, sshConfig *ssh.Clien
 		username = ssh_config.Get(url.Host, "User")
 	}
 
-	keyPath := ssh_config.Get(url.Host, "IdentityFile")
-	// Hard-coded default from library. Should open issue.
-	// github.com/kevinburke/ssh_config/validators.go:120
-	if keyPath == "~/.ssh/identity" {
-		keyPath = DEFAULT_KEY_PATH
+	var keyPath string
+	cmdLineKeyPath := viper.GetString("identity")
+	if cmdLineKeyPath != "" {
+		keyPath = cmdLineKeyPath
+	} else {
+		keyPath = ssh_config.Get(url.Host, "IdentityFile")
+		// Hard-coded default from library. Should open issue.
+		// github.com/kevinburke/ssh_config/validators.go:120
+		if keyPath == "~/.ssh/identity" {
+			keyPath = DefaultKeyPath
+		}
 	}
 
 	key, err := publicKey(keyPath)

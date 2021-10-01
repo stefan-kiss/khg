@@ -52,6 +52,7 @@ func init() {
 
 	getCmd.Flags().StringP("label", "l", "", "Label for the entry. Will overwrite entry if exists.")
 	getCmd.Flags().StringP("api-address", "a", "", "Use api address (usually external ip) instead of the one found in the source file.")
+	getCmd.Flags().StringP("kube-port", "k", "", "Kubernetes api port (overrides all other settings)")
 	getCmd.Flags().BoolP("insecure", "i", false, "Will remove the CA from cluster and add the 'insecure-skip-tls-verify' flag.")
 	getCmd.Flags().BoolP("rewrite-api", "r", false, "Will rewrite api address using the host from the url and default port. Use api-address flag to overwrite this option and specify a custom one.")
 
@@ -99,6 +100,14 @@ func add(cmd *cobra.Command, args []string) {
 		src.ApiAddress = apiAddress
 	}
 
+	kubePort, err := cmd.Flags().GetString("kube-port")
+	if err != nil {
+		log.Fatalf("unable get kube-port from command line: %v", err)
+	}
+	if kubePort != "nil" {
+		src.OverridePort = kubePort
+	}
+
 	sourceKonfig, err := kubeconfig.SourceInit(src, label)
 	if err != nil {
 		log.Fatalf("unable to parse source: %v: %v", src.Source, err)
@@ -108,6 +117,7 @@ func add(cmd *cobra.Command, args []string) {
 	} else {
 		sourceKonfig.Label = sourceKonfig.Url.Host
 	}
+
 	log.Debugf("label: %s", sourceKonfig.Label)
 
 	destKonfig, err := kubeconfig.DestInit(configUsed.Destination)

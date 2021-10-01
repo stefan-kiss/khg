@@ -28,6 +28,7 @@ type Source struct {
 	ApiAddress    string `yaml:"apiaddress"`
 	AutodetectApi bool   `yaml:"-"`
 	OverrideIp    string `yaml:"-"`
+	OverridePort  string `yaml:"-"`
 }
 
 type Cfg struct {

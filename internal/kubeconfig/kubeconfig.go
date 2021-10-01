@@ -219,7 +219,13 @@ func (k *KubeConfig) CopyCurrentContext(from *KubeConfig) error {
 		if len(hostStrings) < 2 {
 			return fmt.Errorf("unable to parse existing API url. unable to find current port")
 		}
-		from.SrcDef.ApiAddress = fmt.Sprintf("https://%s:%s", from.SrcDef.OverrideIp, hostStrings[1])
+		var kPort string
+		if from.SrcDef.OverridePort != "" {
+			kPort = from.SrcDef.OverridePort
+		} else {
+			kPort = hostStrings[1]
+		}
+		from.SrcDef.ApiAddress = fmt.Sprintf("https://%s:%s", from.SrcDef.OverrideIp, kPort)
 		k.Config.Clusters[translatedCluster].Server = from.SrcDef.ApiAddress
 	}
 
