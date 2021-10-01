@@ -228,6 +228,9 @@ func (k *KubeConfig) CopyCurrentContext(from *KubeConfig) error {
 		k.Config.Clusters[translatedCluster].CertificateAuthorityData = nil
 		k.Config.Clusters[translatedCluster].InsecureSkipTLSVerify = true
 	}
+	if k.Config.CurrentContext == "" {
+		k.Config.CurrentContext = translatedContext
+	}
 	return nil
 }
 
