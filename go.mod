@@ -3,10 +3,12 @@ module github.com/stefan-kiss/khg
 go 1.14
 
 require (
+	github.com/bketelsen/crypt v0.0.3-0.20200106085610-5cbc8cc4026c // indirect
 	github.com/go-logr/logr v0.3.0 // indirect
 	github.com/goccy/go-yaml v1.8.4
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/k0kubun/pp v3.0.1+incompatible
@@ -17,11 +19,12 @@ require (
 	github.com/pelletier/go-toml v1.8.1 // indirect
 	github.com/pkg/sftp v1.12.0
 	github.com/sirupsen/logrus v1.7.0
+	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/spf13/afero v1.5.1 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
-	github.com/spf13/cobra v1.1.1
+	github.com/spf13/cobra v1.0.0
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/viper v1.7.1
+	github.com/spf13/viper v1.4.1-0.20190911140308-99520c81d86e
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	golang.org/x/net v0.0.0-20201224014010-6772e930b67b // indirect
 	golang.org/x/oauth2 v0.0.0-20210113205817-d3ed898aa8a3 // indirect

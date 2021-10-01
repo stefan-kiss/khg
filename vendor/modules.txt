@@ -1,3 +1,5 @@
+# github.com/bketelsen/crypt v0.0.3-0.20200106085610-5cbc8cc4026c
+## explicit
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
 # github.com/fatih/color v1.10.0
@@ -27,6 +29,8 @@ github.com/golang/protobuf/proto
 ## explicit
 github.com/google/gofuzz
 github.com/google/gofuzz/bytesource
+# github.com/gorilla/websocket v1.4.2
+## explicit
 # github.com/hashicorp/hcl v1.0.0
 github.com/hashicorp/hcl
 github.com/hashicorp/hcl/hcl/ast
@@ -83,6 +87,8 @@ github.com/pkg/sftp
 # github.com/sirupsen/logrus v1.7.0
 ## explicit
 github.com/sirupsen/logrus
+# github.com/smartystreets/goconvey v1.6.4
+## explicit
 # github.com/spf13/afero v1.5.1
 ## explicit
 github.com/spf13/afero
@@ -90,7 +96,7 @@ github.com/spf13/afero/mem
 # github.com/spf13/cast v1.3.1
 ## explicit
 github.com/spf13/cast
-# github.com/spf13/cobra v1.1.1
+# github.com/spf13/cobra v1.0.0
 ## explicit
 github.com/spf13/cobra
 # github.com/spf13/jwalterweatherman v1.1.0
@@ -98,7 +104,7 @@ github.com/spf13/cobra
 github.com/spf13/jwalterweatherman
 # github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
-# github.com/spf13/viper v1.7.1
+# github.com/spf13/viper v1.4.1-0.20190911140308-99520c81d86e
 ## explicit
 github.com/spf13/viper
 # github.com/subosito/gotenv v1.2.0
@@ -189,7 +195,6 @@ google.golang.org/protobuf/runtime/protoimpl
 gopkg.in/inf.v0
 # gopkg.in/ini.v1 v1.62.0
 ## explicit
-gopkg.in/ini.v1
 # gopkg.in/yaml.v2 v2.4.0
 ## explicit
 gopkg.in/yaml.v2
