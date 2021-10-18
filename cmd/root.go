@@ -65,7 +65,7 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.PersistentFlags().BoolP("persistent", "p", false, "persist any changes to config file")
-	rootCmd.PersistentFlags().StringP("identity", "i", "", "ssh private key")
+	rootCmd.PersistentFlags().StringP("identity", "I", "", "ssh private key")
 	rootCmd.PersistentFlags().StringP("log-level", "L", "INFO", "Log Level. Default INFO")
 }
 
